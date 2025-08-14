@@ -1,71 +1,92 @@
 import { useMemo, useRef, useState } from "react";
 import { Canvas, type ThreeEvent, useFrame } from "@react-three/fiber";
-import { OrbitControls, Environment, Text } from "@react-three/drei";
+import {
+  OrbitControls,
+  Environment,
+  RoundedBox,
+  useTexture, // ← thêm
+} from "@react-three/drei";
 import * as THREE from "three";
+import reactpng from "../assets/react.png";
+import nodejs from "../assets/nodejs.png";
+import html5 from "../assets/html5.png";
+import css3 from "../assets/css3.png";
+import docker from "../assets/docker.png";
+import tailwind from "../assets/tailwind.png";
+import javascript from "../assets/javascript.png";
+import mongodb from "../assets/mongodb.png";
+import typescript from "../assets/typescript.png";
+import cloudinary from "../assets/cloudinary.png";
+import github from "../assets/github.png";
+import antd from "../assets/antd.svg";
+import shadcnui from "../assets/shadcnui.png";
+import postgresql from "../assets/postgresql.png";
+import threejs from "../assets/threejs.png";
+import express from "../assets/express.png";
+import vercel from "../assets/vercel.svg";
+import redux from "../assets/redux.svg";
+import zustand from "../assets/zustand.png";
+import figma from "../assets/figma.png";
+import nestjs from "../assets/nestjs.svg";
+import nextjs from "../assets/nextjs.svg";
+import aws from "../assets/aws.png";
+import spring from "../assets/spring.png";
 
 /**
  * TẠO HÌNH HỌC KEYCAP CÓ TAPER (MẶT TRÊN NHỎ HƠN)
- * - Dựa trên BoxGeometry chia lưới đủ dày để "bóp" đỉnh theo trục Y
  */
-function useTaperedBoxGeom(size: [number, number, number], topScale = 0.86) {
-  return useMemo(() => {
-    const [w, h, d] = size;
-    const geo = new THREE.BoxGeometry(w, h, d, 12, 8, 12);
-    const pos = geo.attributes.position as THREE.BufferAttribute;
-    const halfH = h / 2;
-    for (let i = 0; i < pos.count; i++) {
-      const y = pos.getY(i);
-      const t = (y + halfH) / h; // 0 ở đáy, 1 ở đỉnh
-      const s = 1 + (topScale - 1) * t; // scale tuyến tính theo độ cao
-      pos.setX(i, pos.getX(i) * s);
-      pos.setZ(i, pos.getZ(i) * s);
-    }
-    pos.needsUpdate = true;
-    geo.computeVertexNormals();
-    return geo;
-  }, [size, topScale]);
-}
+// function useTaperedBoxGeom(size: [number, number, number], topScale = 0.86) {
+//   return useMemo(() => {
+//     const [w, h, d] = size;
+//     const geo = new THREE.BoxGeometry(w, h, d, 12, 8, 12);
+//     const pos = geo.attributes.position as THREE.BufferAttribute;
+//     const halfH = h / 2;
+//     for (let i = 0; i < pos.count; i++) {
+//       const y = pos.getY(i);
+//       const t = (y + halfH) / h;
+//       const s = 1 + (topScale - 1) * t;
+//       pos.setX(i, pos.getX(i) * s);
+//       pos.setZ(i, pos.getZ(i) * s);
+//     }
+//     pos.needsUpdate = true;
+//     geo.computeVertexNormals();
+//     return geo;
+//   }, [size, topScale]);
+// }
 
 /** Kiểu props cho một keycap */
 type KeycapProps = {
   color: string;
-  label?: string;
-  position: [number, number, number]; // trong hệ toạ độ CỦA NHÓM BÀN PHÍM (đã xoay)
+  img?: string; // ← dùng ảnh thay vì label
+  position: [number, number, number];
   size?: [number, number, number];
   topScale?: number;
 };
 
 /**
  * KEYCAP với cơ chế NHẤN VUÔNG GÓC MẶT BÀN PHÍM
- * - pressRef: group bên ngoài chỉ lo DỊCH CHUYỂN (position.z) theo trục Z của CHA
- *   => luôn vuông góc với mặt phẳng XY của nhóm bàn phím đã xoay
- * - inner: group bên trong chỉ lo XOAY để hiển thị đẹp (không ảnh hưởng hướng dịch)
  */
 function Keycap({
   color,
-  label,
+  img,
   position,
   size = [1.05, 0.62, 1.05],
-  topScale = 0.84,
 }: KeycapProps) {
-  const pressRef = useRef<THREE.Group>(null!); // nhóm DỊCH (nhấn)
-  const innerRef = useRef<THREE.Group>(null!); // nhóm XOAY (hiển thị)
+  const pressRef = useRef<THREE.Group>(null!);
+  const innerRef = useRef<THREE.Group>(null!);
   const [hovered, setHovered] = useState(false);
   const target = useRef(0);
   const current = useRef(0);
 
   useFrame((_, dt) => {
-    // 1) easing vị trí nhún
-    target.current = hovered ? -0.12 : 0;
+    target.current = hovered ? -0.3 : 0; // độ lún khi hover
     const k = 12;
     current.current += (target.current - current.current) * Math.min(1, k * dt);
 
-    // 2) Hướng nhấn = pháp tuyến mặt TRÊN của keycap trong hệ nhóm bàn phím
     const n = new THREE.Vector3(0, 1, 0)
       .applyQuaternion(innerRef.current.quaternion)
       .normalize();
 
-    // 3) Dời pressRef dọc theo n, tính từ base position
     pressRef.current.position.set(
       position[0] + n.x * current.current,
       position[1] + n.y * current.current,
@@ -93,21 +114,32 @@ function Keycap({
   };
 
   const topY = size[1] / 2 + 0.001;
-  const geom = useTaperedBoxGeom(size, topScale);
+
+  // texture cho ảnh (dùng ảnh prop nếu có, mặc định dùng reactpng)
+  const tex = useTexture(img ?? (reactpng as unknown as string));
+  useMemo(() => {
+    if (!tex) return;
+    tex.anisotropy = 8;
+    tex.magFilter = THREE.LinearFilter; // đổi sang NearestFilter nếu icon pixel-art
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (tex as any).encoding = THREE.sRGBEncoding;
+  }, [tex]);
 
   return (
     <group ref={pressRef} position={position}>
-      {/* QUAN TRỌNG: quay -90° quanh X để mặt TRÊN (local +Y) // mặt phẳng bàn phím */}
+      {/* QUAY -90° quanh X để mặt TRÊN (local +Y) song song mặt phẳng bàn phím */}
       <group ref={innerRef} rotation={[-Math.PI / 2, 0, Math.PI]}>
         {/* Đế phím */}
         <mesh position={[0, -0.6, -0.08]}>
           <boxGeometry args={[size[0] * 1.05, size[1] * 0.2, size[2] * 1.05]} />
-          <meshStandardMaterial color="#151515" />
+          <meshStandardMaterial color="#DF2125" />
         </mesh>
 
-        {/* Thân phím */}
-        <mesh
-          geometry={geom}
+        {/* Thân phím (bo góc) */}
+        <RoundedBox
+          args={size}
+          radius={0.12}
+          smoothness={8}
           onPointerOver={onOver}
           onPointerOut={onOut}
           onPointerDown={onDown}
@@ -118,32 +150,32 @@ function Keycap({
             roughness={0.45}
             metalness={0.08}
           />
-        </mesh>
+        </RoundedBox>
 
-        {/* Nhãn — KHÔNG xoay thêm, vì innerRef đã xoay -90° */}
-        {label && (
-          <Text
-            position={[0, topY, 0]}
-            rotation={[-Math.PI / 2, 0, Math.PI]}
-            material-side={THREE.DoubleSide}
-            fontSize={0.32}
-            color="#ffffff"
-            anchorX="center"
-            anchorY="middle"
-            outlineWidth={0.08}
-            outlineColor="#000000"
-            depthOffset={-0.5}
-          >
-            {label}
-          </Text>
-        )}
+        {/* Ảnh dán trên mặt phím */}
+        <mesh
+          position={[0, topY + 0.0015, 0]}
+          rotation={[-Math.PI / 2, 0, Math.PI]}
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          raycast={() => null as any} // để không chặn hover/click lên keycap
+          renderOrder={2}
+        >
+          {/* Chỉnh kích thước icon tại đây (0.7–0.85 là đẹp) */}
+          <planeGeometry args={[0.78, 0.78]} />
+          <meshBasicMaterial
+            map={tex}
+            transparent
+            depthWrite={false}
+            toneMapped={false}
+          />
+        </mesh>
       </group>
     </group>
   );
 }
 
-/** Định nghĩa màu/nhãn mỗi phím */
-type KeyDef = { color: string; label?: string };
+/** Định nghĩa màu + ảnh mỗi phím */
+type KeyDef = { color: string; img?: string };
 
 const palette = {
   js: "#F1A93A",
@@ -152,41 +184,58 @@ const palette = {
   tailwind: "#38bdf8",
   three: "#6e6ef7",
   git: "#24292e",
-  node: "#78b75a",
+  node: "#000",
   red: "#ee4b4b",
   orange: "#f59e0b",
   cyan: "#22d3ee",
   green: "#22c55e",
   blue: "#3b82f6",
   gray: "#64748b",
+  typescript: "#007ACC",
+  express: "#000",
+  figma: "#000",
+  nextjs: "#fff",
+  spring: "#fff",
 };
 
+// Tạm thời gán cùng một ảnh reactpng cho tất cả phím (bạn có thể thay riêng từng cái sau)
 const layout: KeyDef[][] = [
   [
-    { color: palette.js, label: "JS" },
-    { color: palette.ts, label: "TS" },
-    { color: palette.tailwind, label: "TW" },
-    { color: palette.node, label: "N" },
-    { color: palette.git, label: "" },
+    { color: palette.js, img: reactpng },
+    { color: palette.ts, img: html5 },
+    { color: palette.tailwind, img: css3 },
+    { color: palette.node, img: nodejs },
+    { color: palette.express, img: express },
+    { color: palette.git, img: docker },
   ],
   [
-    { color: palette.red, label: "H" },
-    { color: palette.cyan, label: "R3F" },
-    { color: palette.three, label: "3" },
-    { color: palette.green, label: "AWS" },
-    { color: palette.orange, label: "Py" },
+    { color: palette.red, img: tailwind },
+    { color: palette.cyan, img: javascript },
+    { color: palette.three, img: typescript },
+    { color: palette.green, img: mongodb },
+    { color: palette.orange, img: cloudinary },
+    { color: palette.git, img: redux },
   ],
   [
-    { color: palette.gray, label: "ex" },
-    { color: palette.react, label: "⚛︎" },
-    { color: palette.blue, label: "D" },
-    { color: palette.green, label: "V" },
-    { color: palette.gray, label: ">" },
+    { color: palette.gray, img: github },
+    { color: palette.react, img: antd },
+    { color: palette.blue, img: shadcnui },
+    { color: palette.green, img: postgresql },
+    { color: palette.gray, img: threejs },
+    { color: palette.git, img: zustand },
+  ],
+  [
+    { color: palette.js, img: vercel },
+    { color: palette.spring, img: spring },
+    { color: palette.figma, img: figma },
+    { color: palette.tailwind, img: aws },
+    { color: palette.node, img: nestjs },
+    { color: palette.nextjs, img: nextjs },
   ],
 ];
 
 /**
- * TÍNH TOẠ ĐỘ LƯỚI CĂN GIỮA TRONG HỆ CỦA NHÓM BÀN PHÍM (đã xoay)
+ * TÍNH TOẠ ĐỘ LƯỚI CĂN GIỮA TRONG HỆ CỦA NHÓM BÀN PHÍM
  */
 function Keyboard() {
   const keys = useMemo(() => {
@@ -196,9 +245,9 @@ function Keyboard() {
     for (let r = 0; r < rows; r++) {
       const cols = layout[r].length;
       for (let c = 0; c < cols; c++) {
-        const x = (c - (cols - 1) / 2) * spacing; // căn giữa ngang
-        const y = (rows / 2 - r) * spacing; // hàng trên y dương
-        items.push({ pos: [x, y, 0], def: layout[r][c] }); // z=0: cùng mặt phẳng
+        const x = (c - (cols - 1) / 2) * spacing;
+        const y = (rows / 2 - r) * spacing;
+        items.push({ pos: [x, y, 0], def: layout[r][c] });
       }
     }
     return items;
@@ -207,12 +256,7 @@ function Keyboard() {
   return (
     <group>
       {keys.map((k, i) => (
-        <Keycap
-          key={i}
-          color={k.def.color}
-          label={k.def.label}
-          position={k.pos}
-        />
+        <Keycap key={i} color={k.def.color} img={k.def.img} position={k.pos} />
       ))}
     </group>
   );
@@ -220,8 +264,6 @@ function Keyboard() {
 
 /**
  * SCENE CHÍNH
- * - Nhóm <group rotation={...}> định nghĩa mặt phẳng bàn phím (XY local của nhóm)
- * - Nhấn phím = dịch theo trục Z của NHÓM NÀY => vuông góc mặt phẳng
  */
 export default function Keyboard3D() {
   return (
@@ -251,9 +293,8 @@ export default function Keyboard3D() {
           <meshStandardMaterial color="#0f1115" roughness={0.8} />
         </mesh>
 
-        {/* NHÓM BÀN PHÍM: XOAY ĐỂ ĐỊNH NGHĨA MẶT PHẲNG */}
+        {/* NHÓM BÀN PHÍM */}
         <group rotation={[-Math.PI / 4, 0, -Math.PI / 16]}>
-          {/* <axesHelper args={[2]} /> // bật lên nếu muốn kiểm tra hướng trục */}
           <Keyboard />
         </group>
 
