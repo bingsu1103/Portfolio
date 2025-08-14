@@ -64,7 +64,7 @@ function Keycap({
   const geom = useTaperedBoxGeom(size, topScale);
 
   return (
-    <group ref={group} position={position}>
+    <group ref={group} position={position} rotation={[Math.PI / 4, 0, 0]}>
       <mesh position={[0, -0.6, -0.08]}>
         <boxGeometry args={[size[0] * 1.05, size[1] * 0.2, size[2] * 1.05]} />
         <meshStandardMaterial color="#151515" />
