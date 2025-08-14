@@ -66,12 +66,7 @@ type KeycapProps = {
 /**
  * KEYCAP với cơ chế NHẤN VUÔNG GÓC MẶT BÀN PHÍM
  */
-function Keycap({
-  color,
-  img,
-  position,
-  size = [1.05, 0.62, 1.05],
-}: KeycapProps) {
+function Keycap({ color, img, position, size = [1.05, 1, 1.05] }: KeycapProps) {
   const pressRef = useRef<THREE.Group>(null!);
   const innerRef = useRef<THREE.Group>(null!);
   const [hovered, setHovered] = useState(false);
@@ -139,7 +134,7 @@ function Keycap({
         {/* Thân phím (bo góc) */}
         <RoundedBox
           args={size}
-          radius={0.12}
+          radius={0.2}
           smoothness={8}
           onPointerOver={onOver}
           onPointerOut={onOut}
@@ -173,6 +168,50 @@ function Keycap({
       </group>
     </group>
   );
+}
+
+function KeyboardRig({
+  children,
+  onWheelDelta,
+}: {
+  children: React.ReactNode;
+  onWheelDelta: React.MutableRefObject<number>;
+}) {
+  const groupRef = useRef<THREE.Group>(null!);
+
+  // góc mục tiêu (khởi tạo giống bạn đang set cố định)
+  const target = useRef({
+    x: -Math.PI / 4,
+    y: 0,
+    z: -Math.PI / 16,
+  });
+  // góc hiện tại (để nội suy mượt)
+  const current = useRef({ ...target.current });
+
+  useFrame((_, dt) => {
+    // cộng dồn delta từ wheel vào trục Y (xoay quanh trục đứng)
+    if (onWheelDelta.current !== 0) {
+      target.current.y += onWheelDelta.current * 0.003; // hệ số nhạy
+      onWheelDelta.current = 0; // reset sau khi áp dụng
+    }
+
+    // nội suy mượt về target
+    const k = 10; // tốc độ mượt
+    current.current.x +=
+      (target.current.x - current.current.x) * Math.min(1, k * dt);
+    current.current.y +=
+      (target.current.y - current.current.y) * Math.min(1, k * dt);
+    current.current.z +=
+      (target.current.z - current.current.z) * Math.min(1, k * dt);
+
+    groupRef.current.rotation.set(
+      current.current.x,
+      current.current.y,
+      current.current.z
+    );
+  });
+
+  return <group ref={groupRef}>{children}</group>;
 }
 
 /** Định nghĩa màu + ảnh mỗi phím */
@@ -267,14 +306,18 @@ function Keyboard() {
  * SCENE CHÍNH
  */
 export default function Keyboard3D() {
+  const wheelDeltaRef = useRef(0);
   return (
-    <div className="h-screen w-full bg-black text-white">
-      <div className="absolute inset-x-0 top-6 text-center select-none">
-        <h1 className="text-4xl font-bold tracking-wider opacity-90">SKILLS</h1>
-        <p className="text-sm opacity-60">(hover: lún xuống)</p>
-      </div>
-
-      <Canvas camera={{ position: [0, -5.5, 8], fov: 40 }}>
+    <div className="h-screen w-full bg-black text-white ml-[330px]">
+      <Canvas
+        camera={{ position: [-5, 1, 7], fov: 70 }}
+        onWheel={(e) => {
+          // cộng dồn deltaY; giá trị dương/âm tùy hướng cuộn
+          wheelDeltaRef.current += e.deltaY;
+          // NGĂN OrbitControls zoom nếu bạn để enableZoom=true
+          e.stopPropagation();
+        }}
+      >
         {/* NỀN & ÁNH SÁNG */}
         <color attach="background" args={["#0b0c10"]} />
         <spotLight
@@ -286,18 +329,21 @@ export default function Keyboard3D() {
         <ambientLight intensity={0.3} />
 
         {/* TẤM NỀN BÀN PHÍM (backplate) */}
-        <mesh
-          position={[0, 0, -0.5]}
-          rotation={[-Math.PI / 4, 0, -Math.PI / 16]}
-        >
-          <boxGeometry args={[9, 6, 0.4]} />
-          <meshStandardMaterial color="#0f1115" roughness={0.8} />
-        </mesh>
+        <KeyboardRig onWheelDelta={wheelDeltaRef}>
+          {/* TẤM NỀN BÀN PHÍM (backplate) */}
+          <mesh position={[0, 0, -0.5]}>
+            <boxGeometry args={[7.5, 5.5, 0.5]} />
+            <meshStandardMaterial color="#0f1115" roughness={0.9} />
+          </mesh>
+
+          {/* NHÓM BÀN PHÍM */}
+          <Keyboard />
+        </KeyboardRig>
 
         {/* NHÓM BÀN PHÍM */}
-        <group rotation={[-Math.PI / 4, 0, -Math.PI / 16]}>
-          <Keyboard />
-        </group>
+        {/* <group rotation={[-Math.PI / 4, 0, -Math.PI / 16]}>
+            <Keyboard />
+          </group> */}
 
         <Environment preset="city" />
         <OrbitControls enablePan={false} minDistance={6} maxDistance={14} />
