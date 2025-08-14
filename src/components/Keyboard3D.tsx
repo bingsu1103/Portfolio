@@ -121,8 +121,9 @@ function Keycap({
     if (!tex) return;
     tex.anisotropy = 8;
     tex.magFilter = THREE.LinearFilter; // đổi sang NearestFilter nếu icon pixel-art
+    // @ts-expect-error: sRGBEncoding may not be typed on THREE but exists at runtime
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (tex as any).encoding = THREE.sRGBEncoding;
+    tex.encoding = (THREE as any).sRGBEncoding;
   }, [tex]);
 
   return (
