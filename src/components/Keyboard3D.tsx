@@ -290,7 +290,7 @@ export default function Keyboard3D() {
       {/* CỘT PHẢI: Canvas + Keyboard */}
       <div className="relative w-full h-[50vh] md:h-full">
         <Canvas
-          camera={{ position: [-5, 1, 7], fov: 75 }}
+          camera={{ position: [-2, 5, 7], fov: 75 }}
           onPointerDown={(e) => {
             if ((e.pointerType as any) !== "mouse") return;
             dragging.current = true;
@@ -337,7 +337,7 @@ export default function Keyboard3D() {
             speed={0.5}
             scale={0.02}
             phase={0.2}
-            center={[-3, 15, -15]} // 👈 tâm lệch về giữa khung phải
+            center={[-3, 1, -15]} // 👈 tâm lệch về giữa khung phải
           />
 
           {/* có thể thêm nhiều model khác nhau, khác phase để không đè nhau */}

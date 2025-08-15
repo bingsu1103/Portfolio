@@ -1,7 +1,7 @@
 import { Menu, Moon, Sun, Volume2, VolumeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/components/context/theme.context";
-import { memo } from "react";
+import { memo, useState } from "react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,10 +20,12 @@ const NAVS = [
   { label: "Home", index: 0 },
   { label: "About", index: 1 },
   { label: "Project", index: 2 },
+  { label: "Resume", index: 3 },
 ];
 
 const Header = ({ current, onNav }: HeaderProps) => {
   const { theme, setTheme } = useTheme();
+  const [mute, setMute] = useState<boolean>(false);
 
   return (
     <div className="bg-background/80 backdrop-blur sticky top-0 z-10 flex items-center justify-between">
@@ -68,12 +70,15 @@ const Header = ({ current, onNav }: HeaderProps) => {
           </Button>
         )}
         <div className="flex gap-2">
-          <Button>
-            <Volume2 />
-          </Button>
-          <Button>
-            <VolumeOff />
-          </Button>
+          {mute === false ? (
+            <Button variant="outline" onClick={() => setMute(true)}>
+              <Volume2 className="text-[#F56565]" />
+            </Button>
+          ) : (
+            <Button variant="outline" onClick={() => setMute(false)}>
+              <VolumeOff className="text-[#F56565]" />
+            </Button>
+          )}
         </div>
 
         <div className="sm:hidden">
