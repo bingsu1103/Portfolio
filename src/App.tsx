@@ -12,7 +12,7 @@ export default function App() {
   };
 
   return (
-    <div className="app">
+    <div className="app" style={{ position: "relative" }}>
       <Header current={current} onNav={handleNav} />
       <Portfolio
         onIndexChange={setCurrent}

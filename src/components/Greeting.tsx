@@ -3,6 +3,7 @@ import { Button } from "./ui/button";
 import { Download, FolderGit2 } from "lucide-react";
 import wavinghand from "../assets/icon/wavinghand.svg";
 import TerminalSkills from "./TerminalSkills";
+import HangingSign from "./HangingSign";
 
 type GreetingProps = {
   onGoTo?: (i: number) => void;
@@ -10,14 +11,17 @@ type GreetingProps = {
 
 const Greeting = ({ onGoTo }: GreetingProps) => {
   return (
-    <div className="flex flex-col sm:p-20 p-10  bg-[#000]">
+    <div className="flex flex-col sm:p-20 p-10 bg-[#000]">
       <div>
-        <div className="flex gap-2">
-          <h1 className="font-bold text-3xl md:text-4xl">
-            Welcome to my portfolio
-          </h1>
-          <img className="greeting" width={35} src={wavinghand} />
-        </div>
+        <h1 className="font-bold text-3xl md:text-4xl">
+          Welcome to my portfolio
+          <img
+            className="greeting inline mb-2 ml-2"
+            width={35}
+            src={wavinghand}
+          />
+        </h1>
+
         <h2 className="font-bold text-2xl md:text-3xl mt-1">
           I'm <span className="text-[#19F2B3]">Gia An</span>
         </h2>
@@ -61,6 +65,7 @@ const Greeting = ({ onGoTo }: GreetingProps) => {
       <div className="mt-15">
         <TerminalSkills />
       </div>
+      <HangingSign ropeOffset={0} />
     </div>
   );
 };

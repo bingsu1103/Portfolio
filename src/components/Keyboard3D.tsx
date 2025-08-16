@@ -32,7 +32,7 @@ import nestjs from "../assets/nestjs.svg";
 import nextjs from "../assets/nextjs.svg";
 import aws from "../assets/aws.png";
 import spring from "../assets/spring.png";
-import GalaxyBackground from "./GalaxyBackground";
+// import GalaxyBackground from "./GalaxyBackground";
 import OrbitingModel from "./OrbitingModel";
 
 /** Kiểu props cho một keycap */
@@ -96,7 +96,7 @@ function Keycap({ color, img, position, size = [1.05, 1, 1.05] }: KeycapProps) {
     if (!tex) return;
     tex.anisotropy = 8;
     tex.magFilter = THREE.LinearFilter;
-    // @ts-expect-error runtime encoding
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (tex as any).encoding = (THREE as any).sRGBEncoding;
   }, [tex]);
 
@@ -283,15 +283,13 @@ export default function Keyboard3D() {
   const dragDeltaRef = useRef({ dx: 0, dy: 0 });
   const dragging = useRef(false);
   const last = useRef<{ x: number; y: number } | null>(null);
-
   return (
-    <div className="w-full bg-black">
-      {/* CỘT TRÁI: chỗ để content sau này */}
-      {/* CỘT PHẢI: Canvas + Keyboard */}
+    <div className="w-full bg-background">
       <div className="relative w-full h-[50vh] md:h-full">
         <Canvas
-          camera={{ position: [-2, 5, 7], fov: 75 }}
+          camera={{ position: [-2, 5, 7], fov: 70 }}
           onPointerDown={(e) => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             if ((e.pointerType as any) !== "mouse") return;
             dragging.current = true;
             last.current = { x: e.clientX, y: e.clientY };
@@ -315,13 +313,13 @@ export default function Keyboard3D() {
         >
           {/* NỀN & ÁNH SÁNG */}
           <color attach="background" args={["#000000"]} />
-          <GalaxyBackground
+          {/* <GalaxyBackground
             count={3500} // số lượng sao cố định
             radius={58} // bán kính "vũ trụ"
             twist={0.55} // độ xoáy dải ngân hà
             rotSpeed={-0.04} // tốc độ quay rất nhẹ
             jitter={0.001} // lấp lánh nhỏ
-          />
+          /> */}
 
           <spotLight
             position={[20, 20, 20]}
@@ -337,11 +335,8 @@ export default function Keyboard3D() {
             speed={0.5}
             scale={0.02}
             phase={0.2}
-            center={[-3, 1, -15]} // 👈 tâm lệch về giữa khung phải
+            center={[-3, -2, -15]} // 👈 tâm lệch về giữa khung phải
           />
-
-          {/* có thể thêm nhiều model khác nhau, khác phase để không đè nhau */}
-          {/* <OrbitingModel url="/models/satellite.glb" radius={52} speed={0.18} scale={0.7} phase={Math.PI/2} /> */}
 
           {/* BÀN PHÍM */}
           <KeyboardRig dragDelta={dragDeltaRef}>

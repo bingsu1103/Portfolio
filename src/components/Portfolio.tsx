@@ -31,6 +31,7 @@ export default function Portfolio({
   const total = 4;
 
   // --- Utils ---
+
   const vh = () => window.innerHeight;
 
   const getSectionEl = (i: number): HTMLElement | null => {

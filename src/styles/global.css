@@ -199,6 +199,22 @@ nav,
     /* nền xám tối */
 }
 
+.header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    /* lớn hơn dot nav */
+}
+
+.luckiest-guy-regular {
+    font-family: "Luckiest Guy", cursive;
+    font-weight: 400;
+    font-style: normal;
+}
+
+
 
 .cursive {
     font-family: "Cedarville Cursive", cursive;

@@ -46,7 +46,7 @@ const TerminalSkills = () => {
 
         {/* Body */}
         <div className="bg-[#0D1116] p-4">
-          <pre className="text-sm leading-6 font-mono overflow-x-auto">
+          <pre className="text-sm leading-6 font-mono overflow-x-auto overflow-y-hidden">
             {/* wrapperClassName thêm lớp hljs để theme áp dụng */}
             <Typewriter
               options={{
